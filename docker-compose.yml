@@ -1,0 +1,84 @@
+services:
+  postgres:
+    command: postgres -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    expose:
+      - "8080"
+      - "5432"
+    image: postgres:12.2-alpine
+    ports:
+      - "5432:5432"
+      - "8080:8080"
+    volumes:
+      - data:/var/lib/postgresql/data
+
+  nakama:
+    build: .
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      NAKAMA_LOG_LEVEL: ${NAKAMA_LOG_LEVEL}
+      NAKAMA_CONSOLE_USERNAME: ${NAKAMA_CONSOLE_USERNAME}
+      NAKAMA_CONSOLE_PASSWORD: ${NAKAMA_CONSOLE_PASSWORD}
+      NAKAMA_SERVER_KEY: ${NAKAMA_SERVER_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint:
+      - "/bin/sh"
+      - "-ecx"
+      - >
+        /nakama/nakama migrate up --database.address $${DB_USER}:$${DB_PASSWORD}@$${DB_HOST}:$${DB_PORT}/$${DB_NAME} &&
+        exec /nakama/nakama
+        --config /nakama/data/local.yml
+        --database.address $${DB_USER}:$${DB_PASSWORD}@$${DB_HOST}:$${DB_PORT}/$${DB_NAME}
+        --logger.level $${NAKAMA_LOG_LEVEL}
+        --console.username $${NAKAMA_CONSOLE_USERNAME}
+        --console.password $${NAKAMA_CONSOLE_PASSWORD}
+        --socket.server_key $${NAKAMA_SERVER_KEY}
+    expose:
+      - "7349"
+      - "7350"
+      - "7351"
+    healthcheck:
+      test: ["CMD", "/nakama/nakama", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    links:
+      - "postgres:db"
+    ports:
+      - "7349:7349"
+      - "7350:7350"
+      - "7351:7351"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_NAKAMA_HOST: ${VITE_NAKAMA_HOST}
+        VITE_NAKAMA_PORT: ${VITE_NAKAMA_PORT}
+        VITE_NAKAMA_KEY: ${VITE_NAKAMA_KEY}
+        VITE_NAKAMA_SSL: ${VITE_NAKAMA_SSL}
+    depends_on:
+      - nakama
+    ports:
+      - "${FRONTEND_PORT}:80"
+    restart: unless-stopped
+
+volumes:
+  data:

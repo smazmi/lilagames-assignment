@@ -88,21 +88,26 @@ Workflow file: `.github/workflows/build-and-push-images.yml`
 Trigger:
 
 - Pull request merged into `main`
+- Push a git tag like `v1.2.0`
 - Manual workflow dispatch
 
 Images published:
 
-- `ghcr.io/smazmi/lila-xoxo-backend:latest` (+ sha tags)
-- `ghcr.io/smazmi/lila-xoxo-frontend:latest` (+ sha tags)
+- `ghcr.io/smazmi/lila-xoxo-backend:latest`
+- `ghcr.io/smazmi/lila-xoxo-frontend:latest`
+- `sha-<short-commit>` tags for traceability
+- Semver tags from git tags (for example `v1.2.0`, `1.2`)
 
 ### Production deployment (manual)
 
 1. On server, place `docker-compose.yml` and a valid `.env`
-2. Authenticate to GHCR
+2. (Optional for public images) Authenticate to GHCR
 
 ```bash
 docker login ghcr.io -u smazmi
 ```
+
+If your registry access is public and unauthenticated pulls work in your environment, you can skip login.
 
 3. Pull and start
 

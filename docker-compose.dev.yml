@@ -22,8 +22,7 @@ services:
       - data:/var/lib/postgresql/data
 
   nakama:
-    image: ghcr.io/${GHCR_NAMESPACE:-smazmi}/lila-xoxo-backend:${IMAGE_TAG:-latest}
-    pull_policy: always
+    build: .
     environment:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
@@ -64,34 +63,21 @@ services:
       - "7349:7349"
       - "7350:7350"
       - "7351:7351"
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/${GHCR_NAMESPACE:-smazmi}/lila-xoxo-frontend:${IMAGE_TAG:-latest}
-    pull_policy: always
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_NAKAMA_HOST: ${VITE_NAKAMA_HOST}
+        VITE_NAKAMA_PORT: ${VITE_NAKAMA_PORT}
+        VITE_NAKAMA_KEY: ${VITE_NAKAMA_KEY}
+        VITE_NAKAMA_SSL: ${VITE_NAKAMA_SSL}
     depends_on:
       - nakama
     ports:
       - "${FRONTEND_PORT:-5173}:80"
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
-    restart: unless-stopped
-
-  watchtower:
-    image: containrrr/watchtower:1.7.1
-    command:
-      - "--label-enable"
-      - "--interval"
-      - "${WATCHTOWER_POLL_INTERVAL:-60}"
-      - "--cleanup"
-      - "--rolling-restart"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      - nakama
-      - frontend
     restart: unless-stopped
 
 volumes:

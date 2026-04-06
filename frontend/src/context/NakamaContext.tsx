@@ -17,10 +17,16 @@ import type {
   CustomRoomState,
 } from '../types';
 
-const NAKAMA_HOST = import.meta.env.VITE_NAKAMA_HOST ?? '127.0.0.1';
-const NAKAMA_PORT = import.meta.env.VITE_NAKAMA_PORT ?? '7350';
-const NAKAMA_KEY = import.meta.env.VITE_NAKAMA_KEY ?? 'defaultkey';
-const NAKAMA_SSL = import.meta.env.VITE_NAKAMA_SSL === 'true';
+function readEnvString(value: string | undefined, fallback: string): string {
+  if (!value) return fallback;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : fallback;
+}
+
+const NAKAMA_HOST = readEnvString(import.meta.env.VITE_NAKAMA_HOST, '127.0.0.1');
+const NAKAMA_PORT = readEnvString(import.meta.env.VITE_NAKAMA_PORT, '7350');
+const NAKAMA_KEY = readEnvString(import.meta.env.VITE_NAKAMA_KEY, 'defaultkey');
+const NAKAMA_SSL = readEnvString(import.meta.env.VITE_NAKAMA_SSL, 'false') === 'true';
 
 const STORAGE_DEVICE_ID = 'xoxo_device_id';
 const STORAGE_USERNAME = 'xoxo_username';

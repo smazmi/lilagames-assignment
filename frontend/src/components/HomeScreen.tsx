@@ -17,6 +17,7 @@ export function HomeScreen() {
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const isAuthenticated = currentUserId !== '';
 
@@ -24,6 +25,7 @@ export function HomeScreen() {
     if (!nickname.trim()) return;
     setLoading(true);
     setAuthError(null);
+    setActionError(null);
     const deviceId = getOrCreateDeviceId();
     try {
       await authenticate(deviceId, nickname.trim());
@@ -40,8 +42,15 @@ export function HomeScreen() {
 
   const handlePlay = async (mode: 'classic' | 'timed') => {
     setLoading(true);
-    await joinMatchmaker(mode);
-    setLoading(false);
+    setActionError(null);
+    try {
+      await joinMatchmaker(mode);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setActionError(msg || 'Could not start matchmaking. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (restoring) {
@@ -121,6 +130,12 @@ export function HomeScreen() {
 
             {/* Action buttons */}
             <div className="rule w-full my-1" />
+
+            {actionError && (
+              <p className="text-sm text-red-400">
+                {actionError}
+              </p>
+            )}
 
             <button
               onClick={() => handlePlay('classic')}

@@ -33,6 +33,7 @@ services:
       NAKAMA_CONSOLE_USERNAME: ${NAKAMA_CONSOLE_USERNAME}
       NAKAMA_CONSOLE_PASSWORD: ${NAKAMA_CONSOLE_PASSWORD}
       NAKAMA_SERVER_KEY: ${NAKAMA_SERVER_KEY}
+      NAKAMA_CORS_ALLOW_ORIGIN: ${NAKAMA_CORS_ALLOW_ORIGIN}
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,6 +49,9 @@ services:
         --console.username $${NAKAMA_CONSOLE_USERNAME}
         --console.password $${NAKAMA_CONSOLE_PASSWORD}
         --socket.server_key $${NAKAMA_SERVER_KEY}
+        --socket.response_headers "Access-Control-Allow-Origin=$${NAKAMA_CORS_ALLOW_ORIGIN}"
+        --socket.response_headers "Access-Control-Allow-Methods=GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        --socket.response_headers "Access-Control-Allow-Headers=Authorization, Content-Type, Accept, Origin, User-Agent"
     expose:
       - "7349"
       - "7350"

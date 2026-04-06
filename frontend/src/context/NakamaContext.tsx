@@ -141,8 +141,6 @@ export function NakamaProvider({ children }: { children: ReactNode }) {
       // If username is taken, still create/auth with device ID and set display_name later.
       session = await client.authenticateDevice(deviceId, true);
     }
-    sessionRef.current = session;
-
     try {
       await client.updateAccount(session, { username: nickname, display_name: nickname });
     } catch {
@@ -154,14 +152,26 @@ export function NakamaProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    setCurrentUserId(session.user_id!);
-    setCurrentUserName(nickname);
+    const socket = client.createSocket(NAKAMA_SSL, false);
+    try {
+      await socket.connect(session, true);
+    } catch {
+      // Avoid entering a partially authenticated state when HTTP auth works but realtime socket is unavailable.
+      clientRef.current = null;
+      sessionRef.current = null;
+      socketRef.current = null;
+      setCurrentUserId('');
+      setCurrentUserName('');
+      localStorage.removeItem(STORAGE_USERNAME);
+      throw new Error('Realtime connection failed. Please check websocket proxy setup and try again.');
+    }
 
-    localStorage.setItem(STORAGE_USERNAME, nickname);
-
-    const socket = client.createSocket(false, false);
-    await socket.connect(session, true);
+    sessionRef.current = session;
     socketRef.current = socket;
+
+    setCurrentUserId(session.user_id ?? '');
+    setCurrentUserName(nickname);
+    localStorage.setItem(STORAGE_USERNAME, nickname);
 
     socket.onmatchdata = (data) => {
       const decoder = new TextDecoder();
@@ -245,7 +255,9 @@ export function NakamaProvider({ children }: { children: ReactNode }) {
 
   const joinMatchmaker = useCallback(async (mode: 'classic' | 'timed') => {
     const socket = socketRef.current;
-    if (!socket) return;
+    if (!socket) {
+      throw new Error('Realtime connection unavailable. Please sign out and sign in again.');
+    }
     const ticket = await socket.addMatchmaker(
       `+properties.mode:${mode}`,
       2,
@@ -277,7 +289,14 @@ export function NakamaProvider({ children }: { children: ReactNode }) {
     const client = clientRef.current;
     const session = sessionRef.current;
     const socket = socketRef.current;
-    if (!client || !session || !socket) return;
+    if (!client || !session || !socket) {
+      setCustomRoomState((prev) => ({
+        ...prev,
+        isCreating: false,
+        createError: 'Realtime connection unavailable. Please sign out and sign in again.',
+      }));
+      return;
+    }
 
     setCustomRoomState((prev) => ({ ...prev, isCreating: true, createError: null }));
     try {
@@ -300,7 +319,14 @@ export function NakamaProvider({ children }: { children: ReactNode }) {
     const client = clientRef.current;
     const session = sessionRef.current;
     const socket = socketRef.current;
-    if (!client || !session || !socket) return;
+    if (!client || !session || !socket) {
+      setCustomRoomState((prev) => ({
+        ...prev,
+        isJoining: false,
+        joinError: 'Realtime connection unavailable. Please sign out and sign in again.',
+      }));
+      return;
+    }
 
     setCustomRoomState((prev) => ({ ...prev, isJoining: true, joinError: null }));
     try {

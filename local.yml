@@ -1,0 +1,21 @@
+name: nakama-tictactoe
+
+logger:
+  level: INFO
+
+runtime:
+  go_entrypoint: "InitModule"
+  path: "/nakama/data/modules"
+
+console:
+  username: admin
+  password: "change_me_via_env"
+
+socket:
+  server_key: "change_me_via_env"
+  max_message_size_bytes: 4096
+  max_request_size_bytes: 131072
+
+session:
+  token_expiry_sec: 86400
+  refresh_token_expiry_sec: 604800

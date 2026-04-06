@@ -4,7 +4,7 @@
 
 - Source code repository: GitHub repository containing backend, frontend, and deployment configuration
 - Deployed game URL: https://xoxo.sadiqueazmi.in
-- Deployed Nakama HTTP API endpoint: http://nakama-api.sadiqueazmi.in
+- Deployed Nakama HTTP API endpoint: https://nakama-api.sadiqueazmi.in
 - Deployed Nakama Console URL: https://nakama-admin.sadiqueazmi.in
 
 ## Project overview

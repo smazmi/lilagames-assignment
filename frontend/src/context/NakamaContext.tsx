@@ -65,6 +65,11 @@ export function useNakama(): NakamaContextValue {
   return ctx;
 }
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
 export function NakamaProvider({ children }: { children: ReactNode }) {
   const clientRef = useRef<Client | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -125,7 +130,17 @@ export function NakamaProvider({ children }: { children: ReactNode }) {
     const client = new Client(NAKAMA_KEY, NAKAMA_HOST, NAKAMA_PORT, NAKAMA_SSL);
     clientRef.current = client;
 
-    const session = await client.authenticateDevice(deviceId, true, nickname);
+    let session: Session;
+    try {
+      session = await client.authenticateDevice(deviceId, true, nickname);
+    } catch (err) {
+      const msg = getErrorMessage(err);
+      const usernameTaken = msg.includes('Username is already in use') || msg.includes('"code":6');
+      if (!usernameTaken) throw err;
+
+      // If username is taken, still create/auth with device ID and set display_name later.
+      session = await client.authenticateDevice(deviceId, true);
+    }
     sessionRef.current = session;
 
     try {

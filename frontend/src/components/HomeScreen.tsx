@@ -16,15 +16,26 @@ export function HomeScreen() {
   const { authenticate, joinMatchmaker, logout, showLeaderboard, showCustomRoom, currentUserId, currentUserName, restoring } = useNakama();
   const [nickname, setNickname] = useState('');
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const isAuthenticated = currentUserId !== '';
 
   const handleAuth = async () => {
     if (!nickname.trim()) return;
     setLoading(true);
+    setAuthError(null);
     const deviceId = getOrCreateDeviceId();
-    await authenticate(deviceId, nickname.trim());
-    setLoading(false);
+    try {
+      await authenticate(deviceId, nickname.trim());
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const message = msg.includes('Username is already in use')
+        ? 'That nickname is already in use. Please choose another one.'
+        : 'Could not connect right now. Please try again.';
+      setAuthError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePlay = async (mode: 'classic' | 'timed') => {
@@ -71,11 +82,19 @@ export function HomeScreen() {
               type="text"
               placeholder="Nickname"
               value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                if (authError) setAuthError(null);
+              }}
               onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
               className="w-full px-4 py-3 bg-surface border border-border rounded-md text-txt-primary placeholder-txt-muted font-body text-base focus:outline-none focus:border-accent transition-colors duration-150"
               disabled={loading}
             />
+            {authError && (
+              <p className="text-sm text-red-400">
+                {authError}
+              </p>
+            )}
             <button
               onClick={handleAuth}
               disabled={loading || !nickname.trim()}

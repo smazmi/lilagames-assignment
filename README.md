@@ -75,7 +75,7 @@ Why this was chosen:
 
 ### Deployment strategy
 
-- CI builds and pushes multi-arch images (`linux/amd64`, `linux/arm64`) to GHCR
+- CI builds and pushes multi-arch images (`linux/amd64`, `linux/arm64`) to GHCR on merged PRs to `main`
 - Production compose pulls prebuilt images
 - Watchtower is used to monitor and roll to updated tags
 
@@ -87,7 +87,7 @@ Workflow file: `.github/workflows/build-and-push-images.yml`
 
 Trigger:
 
-- Push to `main`
+- Pull request merged into `main`
 - Manual workflow dispatch
 
 Images published:
@@ -123,7 +123,7 @@ docker compose logs --tail=100 nakama frontend
 ### Public endpoints
 
 - Game frontend: https://xoxo.sadiqueazmi.in
-- Nakama API: http://nakama-api.sadiqueazmi.in
+- Nakama API: https://nakama-api.sadiqueazmi.in
 - Nakama console: https://nakama-admin.sadiqueazmi.in
 
 ### Runtime services in compose
